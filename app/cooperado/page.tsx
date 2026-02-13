@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, AlertCircle, AlertTriangle, ChevronRight } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, ChevronRight, Calendar } from 'lucide-react';
+import { useLicense } from '@/app/contexts/LicenseContext';
 
 interface License {
   id: number;
@@ -10,13 +11,31 @@ interface License {
   status: 'completed' | 'warning' | 'error' | 'pending';
 }
 
+interface CompletedLicense {
+  id: number;
+  title: string;
+  expiryDate: string;
+  statusType: 'expired' | 'expiring-soon' | 'valid' | 'info';
+}
+
 export default function Licenciamento() {
   const router = useRouter();
+  const { isProcessCompleted } = useLicense();
+  
+  // Dados para processo em andamento
   const licenses: License[] = [
     { id: 3, title: 'LICENÇA 3 - AMBIENTAL', progress: 70, status: 'completed' },
     { id: 3, title: 'LICENÇA 3 - AMBIENTAL', progress: 70, status: 'warning' },
     { id: 2, title: 'LICENÇA 2 - AMBIENTAL', progress: 0, status: 'error' },
     { id: 1, title: 'LICENÇA 1 - AMBIENTAL', progress: 30, status: 'pending' },
+  ];
+
+  // Dados para licenças finalizadas
+  const completedLicenses: CompletedLicense[] = [
+    { id: 3, title: 'LICENÇA 3 - AMBIENTAL', expiryDate: '04/10/2024', statusType: 'expired' },
+    { id: 3, title: 'LICENÇA 3 - AMBIENTAL', expiryDate: '04/10/2024', statusType: 'info' },
+    { id: 2, title: 'LICENÇA 2 - AMBIENTAL', expiryDate: '08/12/2025', statusType: 'valid' },
+    { id: 2, title: 'LICENÇA 2 - AMBIENTAL', expiryDate: '08/12/2025', statusType: 'info' },
   ];
 
   const totalProgress = Math.round(
@@ -64,6 +83,108 @@ export default function Licenciamento() {
     router.push(`/cooperado/licenciamento/${licenseId}`);
   };
 
+  // Funções para licenças finalizadas
+  const getCompletedCardStyle = (statusType: CompletedLicense['statusType']) => {
+    switch (statusType) {
+      case 'expired':
+        return 'bg-linear-to-r from-yellow-500 to-yellow-400 text-white shadow-lg shadow-yellow-200';
+      case 'expiring-soon':
+        return 'bg-linear-to-r from-orange-500 to-orange-400 text-white shadow-lg shadow-orange-200';
+      case 'valid':
+        return 'bg-linear-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-200';
+      case 'info':
+        return 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300';
+    }
+  };
+
+  const getCompletedIcon = (statusType: CompletedLicense['statusType']) => {
+    switch (statusType) {
+      case 'expired':
+      case 'expiring-soon':
+        return <AlertTriangle className="w-8 h-8 text-white" />;
+      case 'valid':
+        return <Calendar className="w-8 h-8 text-white" />;
+      case 'info':
+        return null;
+    }
+  };
+
+  const getDateColor = (statusType: CompletedLicense['statusType']) => {
+    if (statusType === 'info') {
+      return 'text-red-600';
+    }
+    return 'text-white';
+  };
+
+  // Renderização condicional baseada no status do processo
+  if (isProcessCompleted) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 pt-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-blue-900 mb-6">
+              MINHAS LICENÇAS
+            </h1>
+          </div>
+
+          {/* Info Text */}
+          <div className="mb-6 text-center">
+            <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+              Ícones e cores indicam status/prazo
+            </p>
+          </div>
+
+          {/* Completed License Cards */}
+          <div className="space-y-4">
+            {completedLicenses.map((license, index) => (
+              <div
+                key={`${license.id}-${index}`}
+                onClick={() => handleCardClick(license.id)}
+                className={`
+                  rounded-2xl p-5 transition-all duration-300 cursor-pointer
+                  transform hover:scale-[1.02] hover:shadow-xl
+                  ${getCompletedCardStyle(license.statusType)}
+                `}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Icon */}
+                    {getCompletedIcon(license.statusType) && (
+                      <div className="flex items-center justify-center">
+                        {getCompletedIcon(license.statusType)}
+                      </div>
+                    )}
+
+                    <div>
+                      <h3
+                        className={`text-lg font-bold mb-1 ${
+                          license.statusType === 'info' ? 'text-blue-900' : 'text-white'
+                        }`}
+                      >
+                        {license.title}
+                      </h3>
+                      <p className={`text-base font-semibold ${getDateColor(license.statusType)}`}>
+                        VENCIMENTO: {license.expiryDate}
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight
+                    className={`w-6 h-6 ${
+                      license.statusType === 'info' ? 'text-gray-400' : 'text-white'
+                    }`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Renderização da tela de progresso (original)
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto">

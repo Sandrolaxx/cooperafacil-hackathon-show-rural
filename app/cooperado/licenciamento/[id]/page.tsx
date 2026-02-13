@@ -2,7 +2,8 @@
 
 import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, CheckSquare, Square, FileText } from 'lucide-react';
+import { ArrowLeft, Upload, CheckSquare, Square, FileText, Download } from 'lucide-react';
+import { useLicense } from '@/app/contexts/LicenseContext';
 
 interface Document {
   id: string;
@@ -20,6 +21,7 @@ interface LicenseDetails {
 export default function LicenciamentoDetalhes({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { isProcessCompleted } = useLicense();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [license, setLicense] = useState<LicenseDetails | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -101,6 +103,35 @@ export default function LicenciamentoDetalhes({ params }: { params: Promise<{ id
     // Exemplo: downloadDocument(documentId)
   };
 
+  const handleView = (documentId: string) => {
+    // Mock de visualização - Aqui você fará o HTTP request para visualizar o documento
+    console.log('Visualizar documento:', documentId);
+    alert(`Visualizando documento ${documentId}`);
+    // TODO: Implementar lógica de visualização HTTP aqui
+  };
+
+  const handleSend = (documentId: string) => {
+    // Mock de envio - Aqui você fará o HTTP request para enviar o documento
+    console.log('Enviar documento:', documentId);
+    setCurrentDocumentId(documentId);
+    fileInputRef.current?.click();
+    // TODO: Implementar lógica de envio HTTP aqui
+  };
+
+  const handleContactTechnician = () => {
+    // Mock - Aqui você implementará a lógica de contato com técnico
+    console.log('Falar com técnico');
+    alert('Abrindo chat com técnico...');
+    // TODO: Implementar lógica de chat/contato
+  };
+
+  const handleUpdateDocuments = () => {
+    // Mock - Aqui você implementará a lógica de atualização de documentos
+    console.log('Atualizar documentos');
+    alert('Atualizando lista de documentos...');
+    // TODO: Implementar lógica de atualização HTTP aqui
+  };
+
   if (!license) {
     return (
       <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -109,6 +140,123 @@ export default function LicenciamentoDetalhes({ params }: { params: Promise<{ id
     );
   }
 
+  // Visualização quando o processo está completo
+  if (isProcessCompleted) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
+        <div className="max-w-2xl mx-auto flex flex-col min-h-[calc(100vh-4rem)]">
+          {/* Header com botão de voltar */}
+          <div className="mb-6 pt-6">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center gap-2 text-blue-900 hover:text-blue-700 transition-colors mb-4"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Voltar</span>
+            </button>
+
+            <h1 className="text-2xl sm:text-3xl font-bold text-blue-900 mb-2">
+              DETALHES {license.title}
+            </h1>
+          </div>
+
+          {/* Progress Info */}
+          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 mb-6 shadow-sm">
+            <p className="text-lg font-semibold text-gray-600">
+              DADOS LICENÇA {license.id} -
+            </p>
+          </div>
+
+          {/* Documents List with icon buttons */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div className="space-y-4">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between p-4 bg-gray-50 rounded-xl"
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Checkbox */}
+                    <div
+                      className={`
+                        flex items-center justify-center w-8 h-8 rounded-lg transition-all
+                        ${
+                          doc.completed
+                            ? 'bg-green-500 text-white'
+                            : 'bg-white border-2 border-gray-300 text-gray-300'
+                        }
+                      `}
+                    >
+                      {doc.completed ? (
+                        <CheckSquare className="w-6 h-6" strokeWidth={3} />
+                      ) : (
+                        <Square className="w-6 h-6" />
+                      )}
+                    </div>
+
+                    {/* Document Title */}
+                    <span className="text-base font-semibold text-gray-700">
+                      {doc.title}
+                    </span>
+                  </div>
+
+                  {/* Action Icon - Download or Upload */}
+                  <div className="flex items-center gap-2">
+                    {doc.completed ? (
+                      <button
+                        onClick={() => handleDownload(doc.id)}
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        title="Baixar arquivo"
+                      >
+                        <Download className="w-8 h-8 text-gray-600 hover:text-blue-600" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleUpload(doc.id)}
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        title="Enviar arquivo"
+                      >
+                        <Upload className="w-8 h-8 text-gray-600 hover:text-blue-600" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Hidden File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="*/*"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+
+          {/* Action Buttons */}
+          <div className="space-y-4">
+            <button
+              onClick={handleContactTechnician}
+              className="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-blue-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 active:scale-[0.98]"
+            >
+              FALAR COM TÉCNICO
+            </button>
+
+            <button
+              onClick={handleUpdateDocuments}
+              className="w-full bg-blue-600 text-white font-bold text-lg py-4 rounded-2xl shadow-lg shadow-blue-200 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 active:scale-[0.98]"
+            >
+              ATUALIZAR DOCUMENTOS
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Visualização quando o processo está em andamento (original)
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 font-sans p-4 sm:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto">
